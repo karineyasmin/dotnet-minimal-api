@@ -1,4 +1,5 @@
 using CatalogoApi.Context;
+using CatalogoApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,14 +14,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
+app.MapPost("/categorias", async (Categoria categoria, AppDbContext db) =>
+{
+    db.Categorias.Add(categoria);
+    await db.SaveChangesAsync();
+    return Results.Created($"/categorias/{categoria.CategoriaId}", categoria);
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
-app.MapGet("/", () => "Hello World!");
 
 app.Run();
