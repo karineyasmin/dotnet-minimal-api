@@ -1,28 +1,111 @@
+using System.Text;
 using CatalogoApi.Context;
 using CatalogoApi.Models;
+using CatalogoApi.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "CatalogoAPi", Version = "v1"});
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT", 
+        In = ParameterLocation.Header,
+        Description = @"JWT Authorization header is using the Bearer scheme.
+                    Enter 'Bearer'[space].Example \'Bearer 12345abcdef\'",
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+}
+);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
+// --------------- endpoint para login
+app.MapPost("/login", [AllowAnonymous] (
+    UserModel userModel, ITokenService tokenService) =>
+    {
+        if (userModel == null)
+        {
+            return Results.BadRequest("Login Inválido");
+        }
+
+        if (userModel.UserName == "admin" && userModel.Password == "admin123")
+        {
+            var tokenString = tokenService.GerarToken(app.Configuration["Jwt:Key"],
+            app.Configuration["Jwt:Issuer"],
+            app.Configuration["Jwt:Audience"],
+            userModel);
+
+            return Results.Ok(new { token = tokenString });
+        }
+        else
+        {
+            return Results.BadRequest("Login Inválido");
+        }
+    }).Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status200OK)
+        .WithName("Login")
+        .WithTags("Autenticação");
+
+
+// ------------- endpoints para categorias
 app.MapPost("/categorias", async (Categoria categoria, AppDbContext db) =>
 {
     db.Categorias.Add(categoria);
     await db.SaveChangesAsync();
     return Results.Created($"/categorias/{categoria.CategoriaId}", categoria);
-}).WithTags("Categorias");
+}).WithTags("Categorias").RequireAuthorization();
 
 app.MapGet("/categorias", async (AppDbContext db) =>
-    await db.Categorias.ToListAsync()).WithTags("Categorias");
+    await db.Categorias.ToListAsync()).WithTags("Categorias")
+    .RequireAuthorization();
 
 app.MapGet("/categorias/{id:int}", async (int id, AppDbContext db) =>
 {
@@ -30,7 +113,7 @@ app.MapGet("/categorias/{id:int}", async (int id, AppDbContext db) =>
         is Categoria categoria
             ? Results.Ok(categoria)
             : Results.NotFound();
-}).WithTags("Categorias");
+}).WithTags("Categorias").RequireAuthorization();;
 
 app.MapPut("/categorias/{id:int}", async (int id, Categoria categoria, AppDbContext db) =>
 {
@@ -48,7 +131,7 @@ app.MapPut("/categorias/{id:int}", async (int id, Categoria categoria, AppDbCont
 
     await db.SaveChangesAsync();
     return Results.Ok(categoriaDB);
-}).WithTags("Categorias");
+}).WithTags("Categorias").RequireAuthorization();;
 
 app.MapDelete("/categorias/{id:int}", async (int id, AppDbContext db) =>
 {
@@ -63,13 +146,14 @@ app.MapDelete("/categorias/{id:int}", async (int id, AppDbContext db) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-}).WithTags("Categorias");
+}).WithTags("Categorias").RequireAuthorization();;
 
 app.MapGet("categoriaprodutos", async (AppDbContext db) =>
     await db.Categorias.Include(c => c.Produtos).ToListAsync()
     )
     .Produces<List<Categoria>>(StatusCodes.Status200OK)
-    .WithTags("Categorias");
+    .WithTags("Categorias")
+    .RequireAuthorization();;
 
 // ----------------- endpoints para produto
 app.MapPost("/produtos", async (Produto produto, AppDbContext db) =>
@@ -81,12 +165,14 @@ app.MapPost("/produtos", async (Produto produto, AppDbContext db) =>
 })
     .Produces<Produto>(StatusCodes.Status201Created)
     .WithName("CriarNovoProduto")
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();;
 
 app.MapGet("/produtos", async (AppDbContext db) =>
     await db.Produtos.ToListAsync())
         .Produces<List<Produto>>(StatusCodes.Status200OK)
-        .WithTags("Produtos");
+        .WithTags("Produtos")
+        .RequireAuthorization();;
 
 app.MapGet("/produto/{id:int}", async (int id, AppDbContext db) =>
 {
@@ -97,7 +183,8 @@ app.MapGet("/produto/{id:int}", async (int id, AppDbContext db) =>
 })
     .Produces<Produto>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status404NotFound)
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();;
 
 app.MapPut("/produtos", async (
     int produtoId,
@@ -116,7 +203,8 @@ app.MapPut("/produtos", async (
     .Produces<Produto>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status404NotFound)
     .WithName("AtualizaNomeProduto")
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();;
 
 
 app.MapPut("/produtos/{id:int}", async (
@@ -148,7 +236,8 @@ app.MapPut("/produtos/{id:int}", async (
     .Produces(StatusCodes.Status400BadRequest)
     .Produces(StatusCodes.Status404NotFound)
     .WithName("AtualizaProduto")
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();;
 
 app.MapDelete("/produtos/{id:int}", async (int id, AppDbContext db) =>
 {
@@ -160,7 +249,7 @@ app.MapDelete("/produtos/{id:int}", async (int id, AppDbContext db) =>
     await db.SaveChangesAsync();
 
     return Results.NoContent();
-}).WithTags("Produtos");
+}).WithTags("Produtos").RequireAuthorization();;
 
 app.MapGet("/produtos/nome/{criterio}", (string criterio, AppDbContext db) =>
 {
@@ -174,7 +263,8 @@ app.MapGet("/produtos/nome/{criterio}", (string criterio, AppDbContext db) =>
 })
     .Produces<List<Produto>>(StatusCodes.Status200OK)
     .WithName("produtoPorNomeCriterio")
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();
 
 app.MapGet("/produtosporpagina", async (
     int numeroPagina,
@@ -188,12 +278,19 @@ app.MapGet("/produtosporpagina", async (
 )
     .Produces<List<Produto>>(StatusCodes.Status200OK)
     .WithName("ProdutosPorPagina")
-    .WithTags("Produtos");
+    .WithTags("Produtos")
+    .RequireAuthorization();;
+
+
+
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.Run();
