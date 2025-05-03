@@ -15,23 +15,23 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   dotnet-app:
-    image: mcr.microsoft.com/dotnet/aspnet:6.0
+    image: mcr.microsoft.com/dotnet/sdk:6.0
     container_name: dotnet-minApi
     build:
-      context: .
+      context: ./CatalogoApi
       dockerfile: Dockerfile
     depends_on:
       - postgres
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=CatalogoDatabase;Username=postgres;Password=postgres"
-      Jwt__Key: "SUA_CHAVE_SECRETA_AQUI"
+      Jwt__Key: "SuperSecretKey@345!"
       Jwt__Issuer: "CatalogoApi"
       Jwt__Audience: "CatalogoApi"
     ports:
       - "5000:5000"
     volumes:
-      - .:/app
+      - ./CatalogoApi:/app
     working_dir: /app
     command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000"]
 
