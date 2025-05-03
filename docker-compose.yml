@@ -25,6 +25,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=CatalogoDatabase;Username=postgres;Password=postgres"
+      Jwt__Key: "SUA_CHAVE_SECRETA_AQUI"
+      Jwt__Issuer: "CatalogoApi"
+      Jwt__Audience: "CatalogoApi"
     ports:
       - "5000:5000"
     volumes:

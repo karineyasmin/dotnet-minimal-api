@@ -1,6 +1,6 @@
 # Catálogo API
 
-Este projeto é uma **Minimal API** desenvolvida em .NET 9 para gerenciar um catálogo de produtos e categorias. O objetivo é explorar os conceitos de Minimal APIs e criar uma aplicação simples e eficiente para fins de aprendizado e desenvolvimento.
+Este projeto é uma **Minimal API** desenvolvida em .NET 6 para gerenciar um catálogo de produtos e categorias. O objetivo é explorar os conceitos de Minimal APIs e criar uma aplicação simples e eficiente para fins de aprendizado e desenvolvimento.
 
 ## O que é uma Minimal API?
 
@@ -25,10 +25,10 @@ O **Catálogo API** é uma aplicação que permite gerenciar produtos e categori
 - Relacionamento entre produtos e categorias.
 
 ### Tecnologias utilizadas:
-- .NET 9
+- .NET 6
 - Entity Framework Core
 - PostgreSQL
-- Docker (para o banco de dados)
+- Docker
 
 ## Status do Projeto
 
@@ -36,30 +36,32 @@ O **Catálogo API** é uma aplicação que permite gerenciar produtos e categori
 
 ## Como executar o projeto
 
-1. Certifique-se de ter o .NET 9 SDK instalado.
-2. Configure a string de conexão no arquivo `appsettings.json`. Exemplo:
-   ```json
-   {
-       "ConnectionStrings": {
-           "DefaultConnection": "Host=localhost;Port=5432;Database=CatalogoDatabase;Username=postgres;Password=postgres;"
-       }
-   }
+1. Certifique-se de ter o Docker e o Docker Compose instalados em sua máquina.
+
+2. Configure o arquivo `docker-compose.yml` com os dados do banco de dados e as configurações do JWT. Por padrão, ele já está configurado com as seguintes credenciais e informações:
+   ```yml
+   environment:
+     POSTGRES_USER: postgres
+     POSTGRES_PASSWORD: postgres
+     POSTGRES_DB: CatalogoDatabase
+     ASPNETCORE_ENVIRONMENT: Development
+     ConnectionStrings__DefaultConnection: "Host=postgres;Database=CatalogoDatabase;Username=postgres;Password=postgres"
+     Jwt__Key: "SUA_CHAVE_SECRETA_AQUI"
+     Jwt__Issuer: "CatalogoApi"
+     Jwt__Audience: "CatalogoApi"
    ```
-3. Suba o banco de dados PostgreSQL usando o Docker Compose:
+   Caso necessário, altere essas informações no arquivo `docker-compose.yml` para atender às suas necessidades.
+
+3. Suba os containers do projeto (banco de dados e aplicação) usando o Docker Compose:
    ```bash
    docker-compose up -d
    ```
-   Isso criará um container com o PostgreSQL configurado para o projeto.
+   Isso criará um container com o PostgreSQL e outro com a aplicação rodando no .NET 6.
 
-4. Execute as migrações do banco de dados:
-   ```bash
-   dotnet ef database update
-   ```
+4. A aplicação estará disponível em `http://localhost:5000`. Você pode acessar a documentação Swagger em `http://localhost:5000/swagger`.
 
-5. Inicie a aplicação:
-   ```bash
-   dotnet run
-   ```
+---
 
+**Nota:** Todas as configurações sensíveis, como a string de conexão com o banco de dados e as informações do JWT, são gerenciadas diretamente no `docker-compose.yml`. Não é necessário alterar o arquivo `appsettings.json`, pois as variáveis de ambiente definidas no `docker-compose.yml` sobrescrevem as configurações padrão.
 ---
 **Nota:** Este projeto é apenas para fins educacionais e de aprendizado.
