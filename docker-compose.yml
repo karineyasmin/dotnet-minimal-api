@@ -14,5 +14,23 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  dotnet-app:
+    image: mcr.microsoft.com/dotnet/aspnet:6.0
+    container_name: dotnet-minApi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=CatalogoDatabase;Username=postgres;Password=postgres"
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["dotnet", "run", "--urls", "http://0.0.0.0:5000"]
+
 volumes:
   postgres_data:
