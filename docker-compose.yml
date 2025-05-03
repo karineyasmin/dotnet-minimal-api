@@ -15,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   dotnet-app:
-    image: mcr.microsoft.com/dotnet/aspnet:6.0
+    image: mcr.microsoft.com/dotnet/sdk:6.0
     container_name: dotnet-minApi
     build:
       context: .
