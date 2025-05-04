@@ -103,6 +103,140 @@ Isso encerrará os serviços e removerá os containers criados.
 
 ---
 
+## Endpoints da API
+
+Abaixo estão os endpoints disponíveis na API, suas funcionalidades e exemplos de uso.
+
+### **Autenticação**
+
+#### POST `/login`
+- **Descrição:** Gera um token JWT para autenticação.
+- **Requer Autenticação:** Não.
+- **Exemplo de Requisição:**
+  ```json
+  {
+    "userName": "admin",
+    "password": "admin123"
+  }
+  ```
+- **Exemplo de Resposta:**
+  ```json
+  {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+  ```
+
+---
+
+### **Categorias**
+
+#### POST `/categorias`
+- **Descrição:** Cria uma nova categoria.
+- **Requer Autenticação:** Sim.
+- **Exemplo de Requisição:**
+  ```json
+  {
+    "nome": "Eletrônicos",
+    "descricao": "Produtos eletrônicos em geral"
+  }
+  ```
+- **Exemplo de Resposta:**
+  ```json
+  {
+    "categoriaId": 1,
+    "nome": "Eletrônicos",
+    "descricao": "Produtos eletrônicos em geral"
+  }
+  ```
+
+#### GET `/categorias`
+- **Descrição:** Retorna todas as categorias.
+- **Requer Autenticação:** Sim.
+- **Exemplo de Resposta:**
+  ```json
+  [
+    {
+      "categoriaId": 1,
+      "nome": "Eletrônicos",
+      "descricao": "Produtos eletrônicos em geral"
+    }
+  ]
+  ```
+
+#### GET `/categorias/{id}`
+- **Descrição:** Retorna uma categoria específica pelo ID.
+- **Requer Autenticação:** Sim.
+- **Exemplo de Resposta:**
+  ```json
+  {
+    "categoriaId": 1,
+    "nome": "Eletrônicos",
+    "descricao": "Produtos eletrônicos em geral"
+  }
+  ```
+
+#### PUT `/categorias/{id}`
+- **Descrição:** Atualiza uma categoria existente.
+- **Requer Autenticação:** Sim.
+- **Exemplo de Requisição:**
+  ```json
+  {
+    "nome": "Eletrônicos Atualizados",
+    "descricao": "Descrição atualizada"
+  }
+  ```
+
+#### DELETE `/categorias/{id}`
+- **Descrição:** Remove uma categoria pelo ID.
+- **Requer Autenticação:** Sim.
+
+---
+
+### **Produtos**
+
+#### POST `/produtos`
+- **Descrição:** Cria um novo produto.
+- **Requer Autenticação:** Sim.
+- **Exemplo de Requisição:**
+  ```json
+  {
+    "nome": "Smartphone",
+    "descricao": "Um smartphone moderno",
+    "preco": 1999.99,
+    "estoque": 50,
+    "categoriaId": 1
+  }
+  ```
+
+#### GET `/produtos`
+- **Descrição:** Retorna todos os produtos.
+- **Requer Autenticação:** Sim.
+
+#### GET `/produtos/{id}`
+- **Descrição:** Retorna um produto específico pelo ID.
+- **Requer Autenticação:** Sim.
+
+#### PUT `/produtos/{id}`
+- **Descrição:** Atualiza um produto existente.
+- **Requer Autenticação:** Sim.
+
+#### DELETE `/produtos/{id}`
+- **Descrição:** Remove um produto pelo ID.
+- **Requer Autenticação:** Sim.
+
+#### GET `/produtos/nome/{criterio}`
+- **Descrição:** Retorna produtos cujo nome contém o critério especificado.
+- **Requer Autenticação:** Sim.
+
+#### GET `/produtosporpagina`
+- **Descrição:** Retorna produtos paginados.
+- **Requer Autenticação:** Sim.
+- **Parâmetros:**
+  - `numeroPagina`: Número da página.
+  - `tamanhoPagina`: Quantidade de itens por página.
+
+---
+
 ## Notas Importantes
 
 - Todas as configurações sensíveis, como a string de conexão com o banco de dados e as informações do JWT, são gerenciadas diretamente no `docker-compose.yml`. Não é necessário alterar o arquivo `appsettings.json`, pois as variáveis de ambiente definidas no `docker-compose.yml` sobrescrevem as configurações padrão.
